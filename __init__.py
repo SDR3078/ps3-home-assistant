@@ -26,3 +26,6 @@ def setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
     # Return boolean to indicate that initialization was successfully.
     return True
+
+
+#test
