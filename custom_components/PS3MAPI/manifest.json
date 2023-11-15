@@ -1,6 +1,6 @@
 {
-  "domain": "hello_world",
-  "name": "PS3MAPI",
+  "domain": "ps3mapi",
+  "name": "ps3mapi",
   "codeowners": [],
   "dependencies": [],
   "documentation": "https://github.com/home-assistant/example-custom-config/tree/master/custom_components/hello_world/",
