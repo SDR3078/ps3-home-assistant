@@ -1,7 +1,6 @@
 from __future__ import annotations
 from homeassistant.components.binary_sensor import BinarySensorEntity
 from .API.PS3MAPI import PS3MAPIWrapper
-from homeassistant.const import UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
