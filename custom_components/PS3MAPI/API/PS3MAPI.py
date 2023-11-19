@@ -31,17 +31,3 @@ class PS3MAPIWrapper:
     @property
     def state(self):
         return self._state
-        
-if __name__ == "__main__":
-    async def main():
-        ps3mapi = PS3MAPIWrapper("192.168.1.59")
-
-        await ps3mapi.update()
-        print(f"Initial state: {ps3mapi.state}")
-
-        while True:
-            await asyncio.sleep(10)
-            await ps3mapi.update()
-            print(f"Current state: {ps3mapi.state}")
-
-    asyncio.run(main())
