@@ -9,7 +9,7 @@ class PS3MAPIWrapper:
         self.ip = ip
         self._state = None
 
-    async def _update_state(self):
+    async def _update(self):
         endpoint = f"http://{self.ip}/index.ps3"
 
         try:
@@ -18,7 +18,7 @@ class PS3MAPIWrapper:
                     if response.status == 200:
                         self._state = "On"
                     else:
-                        self._state = "Unknown"
+                        self._state = None
                         raise SensorError(f"Unexpected response code: {response.status}")
         except asyncio.TimeoutError:
             self._state = "Off"
@@ -26,7 +26,7 @@ class PS3MAPIWrapper:
             print(f"SensorError: {e}")
 
     async def update(self):
-            await self._update_state()
+            await self._update()
 
     @property
     def state(self):
