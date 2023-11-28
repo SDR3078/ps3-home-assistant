@@ -1,26 +1,16 @@
 from __future__ import annotations
 from homeassistant.components.binary_sensor import BinarySensorEntity
-from .API.PS3MAPI import PS3MAPIWrapper
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-def setup_platform(hass: HomeAssistant, config: ConfigType, add_entities: AddEntitiesCallback, discovery_info: DiscoveryInfoType):
-    ip_address = discovery_info.get('ip_address')
-    wrapper = PS3MAPIWrapper(ip_address)
-    add_entities([OnOffSensor(wrapper)], update_before_add = True)
+async def async_setup_platform(hass: HomeAssistant, config: ConfigType, async_add_entities: AddEntitiesCallback, discovery_info: DiscoveryInfoType):
+    async_add_entities([OnOffSensor(hass.data['PS3MAPI']['coordinator'])])
 
-class OnOffSensor(BinarySensorEntity):
-    def __init__(self, wrapper):
-        self.wrapper = wrapper
-        self._state = None
-
-    async def async_update(self):
-        await self.wrapper.update()
-        if self.wrapper.state == 'On':
-            self._state = True
-        else:
-            self._state = False
+class OnOffSensor(BinarySensorEntity, CoordinatorEntity):
+    def __init__(self, coordinator):
+        super().__init__(coordinator)
 
     @property
     def name(self):
@@ -28,4 +18,7 @@ class OnOffSensor(BinarySensorEntity):
 
     @property
     def is_on(self):
-        return self._state
+        if self.coordinator.data['state'] == 'On':
+            return True
+        else:
+            return False

@@ -6,6 +6,6 @@
   "documentation": "https://github.com/home-assistant/example-custom-config/tree/master/custom_components/hello_world/",
   "integration_type": "device",
   "iot_class": "local_polling",
-  "requirements": [],
+  "requirements": ["beautifulsoup4"],
   "version": "0.1.0"
 }
