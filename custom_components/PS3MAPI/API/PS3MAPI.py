@@ -11,6 +11,7 @@ class PS3MAPIWrapper:
         self._state = None
         self._cpu_temp = None
         self._rsx_temp = None
+        self._fan_speed = None
 
     async def _update(self):
         endpoint_temps_fan = f"http://{self.ip}/cpursx.ps3"
@@ -24,15 +25,19 @@ class PS3MAPIWrapper:
                         temperature_text = soup.find('a', class_='s', href = '/cpursx.ps3?up').text
                         self._cpu_temp = temperature_text.split(': ')[1].split('°C')[0]
                         self._rsx_temp = temperature_text.split(': ')[3].split('°C')[0]
+                        fan_speed_text = soup.find('a', class_='s', href = '/cpursx.ps3?mode').text
+                        self._fan_speed = fan_speed_text.split(': ')[1].split('%')[0]
                     else:
                         self._state = None
                         self._cpu_temp = None
                         self._rsx_temp = None
+                        self._fan_speed = None
                         raise SensorError(f"Unexpected response code: {response.status}")
         except asyncio.TimeoutError:
             self._state = "Off"
             self._cpu_temp = None
             self._rsx_temp = None
+            self._fan_speed = None
         except SensorError as e:
             print(f"SensorError: {e}")
 
@@ -50,3 +55,7 @@ class PS3MAPIWrapper:
     @property
     def rsx_temp(self):
         return self._rsx_temp
+    
+    @property
+    def fan_speed(self):
+        return self._fan_speed
