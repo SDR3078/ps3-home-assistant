@@ -19,7 +19,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     async def _async_update_data():
         try:
             await wrapper.update()
-            return {'state': wrapper.state, 'cpu_temp': wrapper.cpu_temp, 'rsx_temp': wrapper.rsx_temp}
+            return {'state': wrapper.state, 'cpu_temp': wrapper.cpu_temp, 'rsx_temp': wrapper.rsx_temp, 'fan_speed': wrapper.fan_speed}
         except Exception as e:
             _LOGGER.error(f"Error updating data: {e}")
             return None
