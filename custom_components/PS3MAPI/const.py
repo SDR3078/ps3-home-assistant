@@ -1,0 +1,1 @@
+DOMAIN = "PS3MAPI"

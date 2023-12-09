@@ -1,0 +1,12 @@
+{
+    "config": {
+      "step": {
+        "user": {
+            "title": "Add PlayStation® 3",
+            "data": {
+                "ip_address": "IP Address of the PlayStation® 3"
+            }
+        }
+      }
+    }
+  }
