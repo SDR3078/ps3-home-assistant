@@ -1,8 +1,12 @@
 import asyncio
 import aiohttp
 from bs4 import BeautifulSoup
+from urllib.parse import quote
 
 class SensorError(Exception):
+    pass
+
+class NotificationError(Exception):
     pass
 
 class PS3MAPIWrapper:
@@ -41,8 +45,48 @@ class PS3MAPIWrapper:
         except SensorError as e:
             print(f"SensorError: {e}")
 
+    async def _send_notification(self, notification: str, icon: int, sound: int):
+        notification_url = quote(notification)
+        endpoint_notification = f"http://{self.ip}/popup.ps3?{notification_url}&icon={icon}&snd={sound}"
+
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(endpoint_notification, timeout = 5) as response:
+                    if response.status == 200:
+                        pass
+                    else:
+                        raise NotificationError(f"Unexpected response code: {response.status}")
+        except asyncio.TimeoutError:
+            print(f"Notification service not available")
+            raise NotificationError("Notification service not available")
+        except NotificationError as e:
+            print(f"NotificationError: {e}")
+            raise
+        except Exception:
+            raise NotificationError("Invalid host")
+
+    async def _test_connection(self, connection_string: str):
+        try:
+            await self._send_notification(connection_string, 1, 1)
+        except NotificationError:
+            raise
+        except Exception:
+            raise NotificationError("Invalid host")
+
     async def update(self):
         await self._update()
+
+    async def send_notification(self, notification: str, icon: int = 1, sound: int = 1):
+        try:
+            await self._send_notification(notification, icon, sound)
+        except NotificationError:
+            raise
+
+    async def test_connection(self, connection_string: str):
+        try:
+            await self._test_connection(connection_string)
+        except NotificationError:
+            raise
 
     @property
     def state(self):
