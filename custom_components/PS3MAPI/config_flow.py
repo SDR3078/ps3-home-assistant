@@ -1,11 +1,28 @@
 from __future__ import annotations
 
+import logging
+
 import voluptuous as vol
 
-from homeassistant import config_entries
+from homeassistant import config_entries, exceptions
 from homeassistant.const import CONF_IP_ADDRESS
+from homeassistant.core import HomeAssistant
 
+from .API.PS3MAPI import PS3MAPIWrapper, NotificationError
 from .const import DOMAIN
+
+_LOGGER = logging.getLogger(__name__)
+
+
+async def validate_input(hass: HomeAssistant, data: dict):
+    wrapper = PS3MAPIWrapper(data[CONF_IP_ADDRESS])
+
+    try:
+        await wrapper.test_connection("Home Assistant connection was succesful!")
+    except NotificationError:
+        raise CannotConnect
+
+    return {"title": data[CONF_IP_ADDRESS]}
 
 
 class PS3MAPIConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -16,10 +33,14 @@ class PS3MAPIConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors = {}
 
         if user_input is not None:
-            if not errors:
-                return self.async_create_entry(
-                    title=user_input[CONF_IP_ADDRESS], data=user_input
-                )
+            try:
+                info = await validate_input(self.hass, user_input)
+                return self.async_create_entry(title=info["title"], data=user_input)
+            except CannotConnect:
+                errors["base"] = "cannot_connect"
+            except Exception:
+                _LOGGER.exception("Unexpected exception")
+                errors["base"] = "unknown"
 
         return self.async_show_form(
             step_id="user",
@@ -30,3 +51,7 @@ class PS3MAPIConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             ),
             errors=errors,
         )
+
+
+class CannotConnect(exceptions.HomeAssistantError):
+    """Error to indicate we cannot connect."""
