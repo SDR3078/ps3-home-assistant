@@ -18,7 +18,7 @@ async def validate_input(hass: HomeAssistant, data: dict):
     wrapper = PS3MAPIWrapper(data[CONF_IP_ADDRESS])
 
     try:
-        await wrapper.test_connection("Home Assistant connection was succesful!")
+        await wrapper.send_notification("Home Assistant connection was succesful!")
     except NotificationError:
         raise CannotConnect
 
