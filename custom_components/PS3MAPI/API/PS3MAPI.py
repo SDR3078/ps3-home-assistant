@@ -42,8 +42,8 @@ class PS3MAPIWrapper:
             self._cpu_temp = None
             self._rsx_temp = None
             self._fan_speed = None
-        except SensorError as e:
-            print(f"SensorError: {e}")
+        except SensorError:
+            raise
 
     async def _send_notification(self, notification: str, icon: int, sound: int):
         notification_url = quote(notification)
@@ -57,16 +57,17 @@ class PS3MAPIWrapper:
                     else:
                         raise NotificationError(f"Unexpected response code: {response.status}")
         except asyncio.TimeoutError:
-            print(f"Notification service not available")
             raise NotificationError("Notification service not available")
-        except NotificationError as e:
-            print(f"NotificationError: {e}")
+        except NotificationError:
             raise
         except Exception:
             raise NotificationError("Invalid host")
 
     async def update(self):
-        await self._update()
+        try:
+            await self._update()
+        except SensorError:
+            raise
 
     async def send_notification(self, notification: str, icon: int = 1, sound: int = 1):
         try:

@@ -5,7 +5,7 @@ from datetime import timedelta
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-from .API.PS3MAPI import PS3MAPIWrapper
+from .API.PS3MAPI import PS3MAPIWrapper, SensorError
 from .const import DOMAIN, PLATFORMS
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -23,7 +23,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 "rsx_temp": wrapper.rsx_temp,
                 "fan_speed": wrapper.fan_speed,
             }
-        except Exception as e:
+        except SensorError as e:
             _LOGGER.error(f"Error updating data: {e}")
             return None
 
