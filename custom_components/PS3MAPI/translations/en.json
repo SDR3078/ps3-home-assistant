@@ -1,0 +1,16 @@
+{
+    "config": {
+      "error": {
+        "cannot_connect": "IP not correct / PlayStation® 3 not turned on"
+      },
+      "step": {
+        "user": {
+            "title": "Add PlayStation® 3",
+            "description": "IMPORTANT: PlayStation® 3 must be turned on",
+            "data": {
+                "ip_address": "IP Address of the PlayStation® 3"
+            }
+        }
+      }
+    }
+  }
