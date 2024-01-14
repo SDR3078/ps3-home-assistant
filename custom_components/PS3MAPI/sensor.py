@@ -4,7 +4,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import TEMP_CELSIUS, PERCENTAGE
+from homeassistant.const import UnitOfTemperature, PERCENTAGE
 from .const import DOMAIN
 
 
@@ -45,7 +45,7 @@ class TempSensor(SensorEntity, CoordinatorEntity):
 
     @property
     def unit_of_measurement(self):
-        return TEMP_CELSIUS
+        return UnitOfTemperature.CELSIUS
 
 
 class FanSpeedSensor(SensorEntity, CoordinatorEntity):
