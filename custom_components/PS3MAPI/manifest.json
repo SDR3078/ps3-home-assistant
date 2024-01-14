@@ -1,10 +1,10 @@
 {
   "domain": "PS3MAPI",
   "name": "PS3MAPI",
-  "codeowners": [],
+  "codeowners": ["@SDR3078"],
   "dependencies": [],
   "config_flow": true,
-  "documentation": "https://github.com/home-assistant/example-custom-config/tree/master/custom_components/hello_world/",
+  "documentation": "https://github.com/SDR3078/PS3MAPI",
   "integration_type": "device",
   "iot_class": "local_polling",
   "requirements": ["beautifulsoup4"],
