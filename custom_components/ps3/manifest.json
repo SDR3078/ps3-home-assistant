@@ -1,6 +1,6 @@
 {
-  "domain": "PS3MAPI",
-  "name": "PS3MAPI",
+  "domain": "ps3",
+  "name": "PlayStation® 3",
   "codeowners": ["@SDR3078"],
   "dependencies": [],
   "config_flow": true,

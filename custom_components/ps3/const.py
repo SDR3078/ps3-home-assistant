@@ -1,2 +1,2 @@
-DOMAIN = "PS3MAPI"
+DOMAIN = "ps3"
 PLATFORMS = ["binary_sensor", "sensor"]
