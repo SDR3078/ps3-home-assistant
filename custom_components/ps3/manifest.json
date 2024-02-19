@@ -4,7 +4,7 @@
   "codeowners": ["@SDR3078"],
   "dependencies": [],
   "config_flow": true,
-  "documentation": "https://github.com/SDR3078/PS3MAPI",
+  "documentation": "https://github.com/SDR3078/ps3-home-assistant",
   "integration_type": "device",
   "iot_class": "local_polling",
   "requirements": ["beautifulsoup4"],
