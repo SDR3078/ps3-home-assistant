@@ -15,7 +15,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Set up the BMW Connected Drive component from configuration.yaml."""
+    
     # Store full yaml config in data for platform.NOTIFY
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][DATA_HASS_CONFIG] = config
@@ -39,7 +39,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             hass,
             Platform.NOTIFY,
             DOMAIN,
-            {CONF_NAME: entry.title, CONF_ENTRY_ID: entry.entry_id},
+            {CONF_NAME: DOMAIN, CONF_ENTRY_ID: entry.entry_id},
             hass.data[DOMAIN][DATA_HASS_CONFIG],
         )
     )

@@ -5,12 +5,12 @@ from homeassistant.components.notify import ATTR_TARGET, BaseNotificationService
 from homeassistant.const import CONF_ENTITY_ID
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
-from .API.PS3MAPI import PS3MAPIWrapper
+from .API.PS3MAPI import PS3MAPIWrapper, NotificationError
 
 from .const import CONF_ENTRY_ID, DOMAIN
 
 
-def get_service(
+async def async_get_service(
     hass: HomeAssistant,
     config: ConfigType,
     discovery_info: DiscoveryInfoType | None = None,
@@ -30,12 +30,9 @@ class PS3NotificationService(BaseNotificationService):
         """Initialize the service."""
         self.ps3wrapper = ps3wrapper
 
-    def send_message(self, message="", **kwargs):
+    async def async_send_message(self, message="", **kwargs):
         """Send a message."""
-        targets = kwargs.get(ATTR_TARGET)
-
-        if not targets:
-            raise ValueError("Missing required argument: target")
-
-        for target in targets:
-            self.ps3wrapper.send_notification("NotificationMessage")
+        try:
+            await self.ps3wrapper.send_notification(message)
+        except NotificationError:
+            raise
