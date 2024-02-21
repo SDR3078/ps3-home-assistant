@@ -8,7 +8,7 @@ from homeassistant import config_entries, exceptions
 from homeassistant.const import CONF_IP_ADDRESS
 from homeassistant.core import HomeAssistant
 
-from .API.PS3MAPI import PS3MAPIWrapper, NotificationError
+from .PS3MAPI import PS3MAPIWrapper, NotificationError
 from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)

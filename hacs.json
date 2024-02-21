@@ -1,0 +1,7 @@
+{
+  "name": "Playstion 3",
+  "content_in_root": false,
+  "render_readme": false,
+  "domains": ["media_player"],
+  "homeassistant": "2023.6.0"
+}
