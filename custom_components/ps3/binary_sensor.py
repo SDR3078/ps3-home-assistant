@@ -5,7 +5,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.config_entries import ConfigEntry
 
-from .const import DOMAIN
+from .const import DOMAIN, ENTRIES
 
 
 async def async_setup_entry(
@@ -14,7 +14,7 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ):
     async_add_entities(
-        [OnOffSensor(hass.data[DOMAIN][config_entry.entry_id]["coordinator"])]
+        [OnOffSensor(hass.data[DOMAIN][ENTRIES][config_entry.entry_id]["coordinator"])]
     )
 
 

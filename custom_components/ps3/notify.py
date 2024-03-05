@@ -1,13 +1,18 @@
 """PS3 Notify service."""
 from __future__ import annotations
 
-from homeassistant.components.notify import ATTR_TARGET, BaseNotificationService
-from homeassistant.const import CONF_ENTITY_ID
+import logging
+
+from collections import defaultdict
+
+from homeassistant.components.notify import ATTR_TARGET, ATTR_DATA, BaseNotificationService
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
-from .API.PS3MAPI import PS3MAPIWrapper, NotificationError
+from .API.PS3MAPI import NotificationError
 
-from .const import CONF_ENTRY_ID, DOMAIN
+from .const import DOMAIN, ENTRIES
+
+_LOGGER = logging.getLogger(__name__)
 
 
 async def async_get_service(
@@ -19,20 +24,35 @@ async def async_get_service(
     if discovery_info is None:
         return None
 
-    data = hass.data[DOMAIN][(discovery_info or {})[CONF_ENTRY_ID]]["coordinator"]
-    return PS3NotificationService(data.wrapper)
+    wrapper_dict = {entry['coordinator'].ip_address: entry['coordinator'].wrapper for entry in hass.data[DOMAIN][ENTRIES].values()}
+    return PS3NotificationService(wrapper_dict)
 
 
 class PS3NotificationService(BaseNotificationService):
     """Implement the notification service for the PS3."""
 
-    def __init__(self, ps3wrapper) -> None:
+    def __init__(self, wrapper_dict) -> None:
         """Initialize the service."""
-        self.ps3wrapper = ps3wrapper
+        self.wrapper_dict= wrapper_dict
 
     async def async_send_message(self, message="", **kwargs):
         """Send a message."""
-        try:
-            await self.ps3wrapper.send_notification(message)
-        except NotificationError:
-            raise
+        
+        targets = kwargs.get(ATTR_TARGET)
+
+        data = kwargs.get(ATTR_DATA)
+
+        if not targets:
+            _LOGGER.error("No targets specified for PS3 notify service")
+        else:
+            for target in targets:
+                try:
+                    if data:
+                        data_dict = defaultdict(lambda: 1, data)
+                        await self.wrapper_dict[target].send_notification(message, icon = data_dict['icon'], sound = data_dict['sound'])
+                    else:
+                        await self.wrapper_dict[target].send_notification(message)
+                except KeyError:
+                    _LOGGER.error(f"{target} is not a known ip address of a registered PlayStation® 3 device")
+                except NotificationError:
+                    _LOGGER.warning(f"Message could not be send because {target} is unavailable")
