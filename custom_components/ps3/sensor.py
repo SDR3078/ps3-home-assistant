@@ -5,7 +5,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfTemperature, PERCENTAGE
-from .const import DOMAIN
+from .const import DOMAIN, ENTRIES
 
 
 async def async_setup_entry(
@@ -16,13 +16,13 @@ async def async_setup_entry(
     async_add_entities(
         [
             TempSensor(
-                hass.data[DOMAIN][config_entry.entry_id]["coordinator"], "cpu_temp"
+                hass.data[DOMAIN][ENTRIES][config_entry.entry_id]["coordinator"], "cpu_temp"
             ),
             TempSensor(
-                hass.data[DOMAIN][config_entry.entry_id]["coordinator"], "rsx_temp"
+                hass.data[DOMAIN][ENTRIES][config_entry.entry_id]["coordinator"], "rsx_temp"
             ),
             FanSpeedSensor(
-                hass.data[DOMAIN][config_entry.entry_id]["coordinator"], "fan_speed"
+                hass.data[DOMAIN][ENTRIES][config_entry.entry_id]["coordinator"], "fan_speed"
             ),
         ]
     )
