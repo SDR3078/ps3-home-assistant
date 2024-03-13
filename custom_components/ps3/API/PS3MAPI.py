@@ -28,7 +28,7 @@ class PS3MAPIWrapper:
                         soup = BeautifulSoup(await response.text(), 'html.parser')
                         temperature_text = soup.find('a', class_='s', href = '/cpursx.ps3?up').text
                         self._cpu_temp = temperature_text.split(': ')[1].split('°C')[0]
-                        self._rsx_temp = temperature_text.split(': ')[3].split('°C')[0]
+                        self._rsx_temp = temperature_text.split(': ')[-1].split('°C')[0]
                         fan_speed_text = soup.find('a', class_='s', href = '/cpursx.ps3?mode').text
                         self._fan_speed = fan_speed_text.split(': ')[1].split('%')[0]
                     else:
