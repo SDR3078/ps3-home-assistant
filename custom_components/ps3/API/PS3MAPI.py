@@ -9,6 +9,9 @@ class SensorError(Exception):
 class NotificationError(Exception):
     pass
 
+class FanModeError(Exception):
+    pass
+
 class PS3MAPIWrapper:
     def __init__(self, ip: str):
         self.ip = ip
@@ -79,6 +82,27 @@ class PS3MAPIWrapper:
             raise
         except Exception:
             raise NotificationError("Invalid host")
+        
+    async def _set_fan_mode(self, fan_mode: str):
+        url_substrings = {'SYSCON': 'fan=0', 'Manual': 'fan=1;/cpursx.ps3?man', 'Dynamic': 'fan=1;/cpursx.ps3?man;/cpursx.ps3?mode', 'Auto': 'fan=2'}
+
+        try:
+            fan_mode_substring = url_substrings[fan_mode]
+            endpoint_fan_mode = f"http://{self.ip}/cpursx.ps3?{fan_mode_substring}"
+
+            async with aiohttp.ClientSession() as session:
+                async with session.get(endpoint_fan_mode, timeout = 5) as response:
+                    if response.status == 200:
+                        pass
+                    else:
+                        raise FanModeError(f"Unexpected response code: {response.status}")
+        except asyncio.TimeoutError:
+            raise FanModeError("Fan mode service not available")
+        except FanModeError:
+            raise
+        except KeyError:
+            raise FanModeError("Fan mode does not exist")
+
 
     async def update(self):
         try:
@@ -90,6 +114,12 @@ class PS3MAPIWrapper:
         try:
             await self._send_notification(notification, icon, sound)
         except NotificationError:
+            raise
+
+    async def set_fan_mode(self, fan_mode: str):
+        try:
+            await self._set_fan_mode(fan_mode)
+        except FanModeError:
             raise
 
     @property
