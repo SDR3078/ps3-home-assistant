@@ -1,7 +1,10 @@
 DOMAIN = "ps3"
-PLATFORMS = ["binary_sensor", "sensor", "climate"]
+PLATFORMS = ["binary_sensor", "sensor", "climate", "number"]
 DATA_HASS_CONFIG = "ps3_hass_config"
 CONF_ENTRY_ID = "entry_id"
 ENTRIES = "entries"
 MAX_TEMP = 85
 MIN_TEMP = 40
+MAX_FAN_SPEED = 100
+MIN_FAN_SPEED = 3
+FAN_SPEED_INCREASE = 1.0

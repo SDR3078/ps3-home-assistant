@@ -37,7 +37,7 @@ class TempRegulator(ClimateEntity, CoordinatorEntity):
 
     @property
     def name(self):
-        return f"test"
+        return "PS3 CPU Temperature"
 
     @property
     def current_temperature(self):

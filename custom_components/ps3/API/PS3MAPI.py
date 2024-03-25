@@ -116,8 +116,25 @@ class PS3MAPIWrapper:
         except Exception:
             raise FanModeError("Invalid host")
         
-    async def _set_target_temp(self, target_temp: int):
+    async def _set_target_temp(self, target_temp: float):
         endpoint_target_temp = f"http://{self.ip}/cpursx.ps3?max={target_temp};/beep.ps3?1"
+        
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(endpoint_target_temp, timeout = 5) as response:
+                    if response.status == 200:
+                        pass
+                    else:
+                        raise RequestError(f"Unexpected response code: {response.status}")
+        except asyncio.TimeoutError:
+            raise RequestError("Request is not available")
+        except RequestError:
+            raise
+        except Exception:
+            raise RequestError("Invalid host")
+        
+    async def _set_fan_speed(self, fan_speed: int):
+        endpoint_target_temp = f"http://{self.ip}/cpursx.ps3?man;/cpursx.ps3?fan={fan_speed};/beep.ps3?1"
         
         try:
             async with aiohttp.ClientSession() as session:
@@ -152,9 +169,15 @@ class PS3MAPIWrapper:
         except FanModeError:
             raise
 
-    async def set_target_temp(self, target_temp: int):
+    async def set_target_temp(self, target_temp: float):
         try:
             await self._set_target_temp(target_temp)
+        except RequestError:
+            raise
+
+    async def set_fan_speed(self, fan_speed: int):
+        try:
+            await self._set_fan_speed(fan_speed)
         except RequestError:
             raise
 
