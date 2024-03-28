@@ -25,15 +25,15 @@ async def async_setup_entry(
 
 
 class TempRegulator(ClimateEntity, CoordinatorEntity):
+    _enable_turn_on_off_backwards_compatibility = False
+    _attr_supported_features = (
+            ClimateEntityFeature.FAN_MODE
+            | ClimateEntityFeature.TARGET_TEMPERATURE
+        )
+    
     def __init__(self, coordinator, name):
         super().__init__(coordinator)
         self._name = name
-        self._attr_supported_features = (
-            ClimateEntityFeature.FAN_MODE
-            | ClimateEntityFeature.TARGET_TEMPERATURE
-            | ClimateEntityFeature.TURN_ON
-            | ClimateEntityFeature.TURN_OFF
-        )
 
     @property
     def name(self):
