@@ -80,6 +80,8 @@ class PS3Coordinator(DataUpdateCoordinator):
                 "cpu_temp": self.wrapper.cpu_temp,
                 "rsx_temp": self.wrapper.rsx_temp,
                 "fan_speed": self.wrapper.fan_speed,
+                "fan_mode": self.wrapper.fan_mode,
+                "target_temp": self.wrapper.target_temp,
             }
         except SensorError as e:
             _LOGGER.error(f"Error updating data: {e}")
