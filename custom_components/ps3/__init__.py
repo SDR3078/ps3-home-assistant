@@ -82,6 +82,7 @@ class PS3Coordinator(DataUpdateCoordinator):
                 "fan_speed": self.wrapper.fan_speed,
                 "fan_mode": self.wrapper.fan_mode,
                 "target_temp": self.wrapper.target_temp,
+                "media_session": self.wrapper.media_session
             }
         except SensorError as e:
             _LOGGER.error(f"Error updating data: {e}")

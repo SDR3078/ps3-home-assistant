@@ -24,6 +24,7 @@ class PS3MAPIWrapper:
         self._fan_speed = None
         self._fan_mode = None
         self._target_temp = None
+        self._media_session = None
         self._fan_modes_mapping = {
             'SYSCON': 'SYSCON',
             'Manual': 'Manual',
@@ -58,6 +59,15 @@ class PS3MAPIWrapper:
                         else:
                             self._target_temp = None
 
+                        game_session_tags = soup.select('span[style="position:relative;top:-20px;"] h2 a')
+                        playback_state = soup.find('label', title = 'Play')
+                        if game_session_tags and playback_state:
+                            self._media_session = {'media_type': 'game', 'game_id': game_session_tags[0].text, 'game_title': game_session_tags[1].text, 'playback_time': playback_state.next_sibling}
+                        elif playback_state:
+                            self._media_session = {'media_type': 'media', 'playback_time': playback_state.next_sibling}
+                        else:
+                            self._media_session = None
+                            
                     else:
                         self._state = None
                         self._cpu_temp = None
@@ -65,6 +75,7 @@ class PS3MAPIWrapper:
                         self._fan_speed = None
                         self._fan_mode = None
                         self._target_temp = None
+                        self._media_session = None
                         raise SensorError(f"Unexpected response code: {response.status}")
         except asyncio.TimeoutError:
             self._state = "Off"
@@ -73,6 +84,7 @@ class PS3MAPIWrapper:
             self._fan_speed = None
             self._fan_mode = None
             self._target_temp = None
+            self._media_session = None
         except SensorError:
             raise
 
@@ -149,7 +161,40 @@ class PS3MAPIWrapper:
             raise
         except Exception:
             raise RequestError("Invalid host")
-
+        
+    async def _quit_playback(self):
+        endpoint_target_temp = f"http://{self.ip}/xmb.ps3$exit;/wait.ps3?xmb"
+        
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(endpoint_target_temp, timeout = 30) as response:
+                    if response.status == 200:
+                        pass
+                    else:
+                        raise RequestError(f"Unexpected response code: {response.status}")
+        except asyncio.TimeoutError:
+            raise RequestError("Request is not available")
+        except RequestError:
+            raise
+        except Exception:
+            raise RequestError("Invalid host")
+        
+    async def _start_playback(self):
+        endpoint_target_temp = f"http://{self.ip}/play.ps3"
+        
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(endpoint_target_temp, timeout = 5) as response:
+                    if response.status == 200:
+                        pass
+                    else:
+                        raise RequestError(f"Unexpected response code: {response.status}")
+        except asyncio.TimeoutError:
+            raise RequestError("Request is not available")
+        except RequestError:
+            raise
+        except Exception:
+            raise RequestError("Invalid host")
 
     async def update(self):
         try:
@@ -181,6 +226,19 @@ class PS3MAPIWrapper:
         except RequestError:
             raise
 
+    async def quit_playback(self):
+        try:
+            await self._quit_playback()
+        except RequestError:
+            raise
+
+    async def start_playback(self):
+        try:
+            await self._start_playback()
+        except RequestError:
+            raise
+
+
     @property
     def state(self):
         return self._state
@@ -208,3 +266,7 @@ class PS3MAPIWrapper:
     @property
     def fan_modes(self):
         return list(self._fan_modes_mapping.values())
+    
+    @property
+    def media_session(self):
+        return self._media_session

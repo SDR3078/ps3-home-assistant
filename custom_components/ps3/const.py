@@ -1,5 +1,5 @@
 DOMAIN = "ps3"
-PLATFORMS = ["binary_sensor", "sensor", "climate", "number"]
+PLATFORMS = ["binary_sensor", "sensor", "climate", "number", "media_player"]
 DATA_HASS_CONFIG = "ps3_hass_config"
 CONF_ENTRY_ID = "entry_id"
 ENTRIES = "entries"
