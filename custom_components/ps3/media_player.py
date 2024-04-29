@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 import logging
-import time
 
 from homeassistant.components.media_player import MediaPlayerEntity, MediaType, MediaPlayerState, MediaPlayerEntityFeature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.util.dt import utcnow
 
-from .const import DOMAIN, ENTRIES
+from .const import DOMAIN, ENTRIES, XMB_SOURCE
 from .API.PS3MAPI import RequestError
 
 _LOGGER = logging.getLogger(__name__)
@@ -25,8 +25,10 @@ async def async_setup_entry(
 
 class MediaPlayer(MediaPlayerEntity, CoordinatorEntity):
     _attr_supported_features = (
-            MediaPlayerEntityFeature.STOP
+            MediaPlayerEntityFeature.PLAY
             | MediaPlayerEntityFeature.PLAY_MEDIA
+            | MediaPlayerEntityFeature.STOP
+            | MediaPlayerEntityFeature.SELECT_SOURCE
         )
      
     def __init__(self, coordinator):
@@ -69,8 +71,26 @@ class MediaPlayer(MediaPlayerEntity, CoordinatorEntity):
         if self.coordinator.data is not None:
             media_session = self.coordinator.data.get("media_session")
             if media_session:
-                return media_session.get("playback_time")
+                playback_time = media_session.get("playback_time")
+                h, m, s = playback_time.split(":")
+                seconds = int(h) * 3600 + int(m) * 60 + int(s)
+                return seconds
         return None
+    
+    @property
+    def media_duration(self):
+        if self.coordinator.data is not None:
+            media_session = self.coordinator.data.get("media_session")
+            if media_session:
+                playback_time = media_session.get("playback_time")
+                h, m, s = playback_time.split(":")
+                seconds = int(h) * 3600 + int(m) * 60 + int(s)
+                return seconds
+        return None
+    
+    @property
+    def media_position_updated_at(self):
+        return utcnow()
     
     @property
     def state(self):
@@ -83,16 +103,45 @@ class MediaPlayer(MediaPlayerEntity, CoordinatorEntity):
         return MediaPlayerState.OFF
     
     @property
+    def source_list(self):
+        if self.coordinator.data is not None:
+            games_dict = self.coordinator.data.get("games")
+            if games_dict is not None:
+                games_list = list(games_dict.keys())
+                games_list.append(XMB_SOURCE)
+                return games_list
+            else:
+                return [XMB_SOURCE]
+        return None
+    
+    @property
+    def source(self):
+        if self.coordinator.data is not None:
+            mounted_gamefile = self.coordinator.data.get("mounted_gamefile")
+            if mounted_gamefile is not None:
+                games_dict = {link: name for name, link in self.coordinator.data.get("games").items()}
+                return games_dict[mounted_gamefile]
+            return XMB_SOURCE
+        return None
+    
+    @property
+    def media_image_url(self):
+        if self.coordinator.data is not None:
+            media_session = self.coordinator.data.get("media_session")
+            if media_session:
+                if media_session.get("media_type") == "game":
+                    return f"http://{self.coordinator.ip_address}{media_session.get('image')}"
+        return None
+    
+    @property
     def icon(self):
         return self._icon
     
-    async def async_play_media(self, media_type, media_id):
+    async def async_media_play(self):
         try:
             await self.coordinator.wrapper.start_playback()
         except RequestError as e:
             _LOGGER.error(e)
-        
-        await self.coordinator.async_refresh()
 
     async def async_media_stop(self):
         try:
@@ -101,3 +150,13 @@ class MediaPlayer(MediaPlayerEntity, CoordinatorEntity):
             _LOGGER.error(e)
         
         await self.coordinator.async_refresh()
+
+    async def async_select_source(self, source):
+        try:
+            if source == XMB_SOURCE:
+                await self.coordinator.wrapper.mount_disc()
+            else:
+                await self.coordinator.wrapper.mount_gamefile(source)
+            _LOGGER.info("Game mounted!")
+        except RequestError as e:
+            _LOGGER.error(e)

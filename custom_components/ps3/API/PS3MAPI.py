@@ -25,6 +25,8 @@ class PS3MAPIWrapper:
         self._fan_mode = None
         self._target_temp = None
         self._media_session = None
+        self._games = None
+        self._mounted_gamefile = None
         self._fan_modes_mapping = {
             'SYSCON': 'SYSCON',
             'Manual': 'Manual',
@@ -34,13 +36,28 @@ class PS3MAPIWrapper:
 
     async def _update(self):
         endpoint_temps_fan = f"http://{self.ip}/cpursx.ps3"
+        endpoint_games = f"http://{self.ip}/index.ps3"
 
         try:
             async with aiohttp.ClientSession() as session:
+                async with session.get(endpoint_games, timeout = 5) as response:
+                    if response.status == 200:
+                        soup = BeautifulSoup(await response.text(), 'html.parser')
+                        game_names = soup.select('div[class="gn"] a')
+                        game_links = soup.select('div[class="ic"] a')
+                        if game_names and game_links:
+                            self._games = {name.text: link['href'] for name, link in zip(game_names, game_links)}
+                    else:
+                        self._games = None
+                        raise SensorError(f"Unexpected response code: {response.status}")
+                    
+                await asyncio.sleep(0)
+
                 async with session.get(endpoint_temps_fan, timeout = 5) as response:
                     if response.status == 200:
                         self._state = "On"
                         soup = BeautifulSoup(await response.text(), 'html.parser')
+
                         temperature_text = soup.find('a', class_='s', href = '/cpursx.ps3?up').text
                         self._cpu_temp = float(temperature_text.split(': ')[1].split('°C')[0])
                         self._rsx_temp = float(temperature_text.split(': ')[-1].split('°C')[0])
@@ -62,11 +79,17 @@ class PS3MAPIWrapper:
                         game_session_tags = soup.select('span[style="position:relative;top:-20px;"] h2 a')
                         playback_state = soup.find('label', title = 'Play')
                         if game_session_tags and playback_state:
-                            self._media_session = {'media_type': 'game', 'game_id': game_session_tags[0].text, 'game_title': game_session_tags[1].text, 'playback_time': playback_state.next_sibling}
+                            self._media_session = {'media_type': 'game', 'game_id': game_session_tags[0].text, 'game_title': game_session_tags[1].text, 'playback_time': playback_state.next_sibling, 'image': game_session_tags[2].find('img')['src']}
                         elif playback_state:
                             self._media_session = {'media_type': 'media', 'playback_time': playback_state.next_sibling}
                         else:
                             self._media_session = None
+
+                        gamefile_tags = soup.select('font[size="3"] a')
+                        if gamefile_tags:
+                            self._mounted_gamefile = gamefile_tags[-1]['href']
+                        else:
+                            self._mounted_gamefile = None
                             
                     else:
                         self._state = None
@@ -76,6 +99,7 @@ class PS3MAPIWrapper:
                         self._fan_mode = None
                         self._target_temp = None
                         self._media_session = None
+                        self._mounted_gamefile = None
                         raise SensorError(f"Unexpected response code: {response.status}")
         except asyncio.TimeoutError:
             self._state = "Off"
@@ -85,6 +109,8 @@ class PS3MAPIWrapper:
             self._fan_mode = None
             self._target_temp = None
             self._media_session = None
+            self._games = None
+            self._mounted_gamefile = None
         except SensorError:
             raise
 
@@ -146,11 +172,11 @@ class PS3MAPIWrapper:
             raise RequestError("Invalid host")
         
     async def _set_fan_speed(self, fan_speed: int):
-        endpoint_target_temp = f"http://{self.ip}/cpursx.ps3?man;/cpursx.ps3?fan={fan_speed};/beep.ps3?1"
+        endpoint_fan_speed = f"http://{self.ip}/cpursx.ps3?man;/cpursx.ps3?fan={fan_speed};/beep.ps3?1"
         
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.get(endpoint_target_temp, timeout = 5) as response:
+                async with session.get(endpoint_fan_speed, timeout = 5) as response:
                     if response.status == 200:
                         pass
                     else:
@@ -163,11 +189,11 @@ class PS3MAPIWrapper:
             raise RequestError("Invalid host")
         
     async def _quit_playback(self):
-        endpoint_target_temp = f"http://{self.ip}/xmb.ps3$exit;/wait.ps3?xmb"
+        endpoint_quit_playback = f"http://{self.ip}/xmb.ps3$exit;/wait.ps3?xmb"
         
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.get(endpoint_target_temp, timeout = 30) as response:
+                async with session.get(endpoint_quit_playback, timeout = 30) as response:
                     if response.status == 200:
                         pass
                     else:
@@ -180,11 +206,61 @@ class PS3MAPIWrapper:
             raise RequestError("Invalid host")
         
     async def _start_playback(self):
-        endpoint_target_temp = f"http://{self.ip}/play.ps3"
+        endpoint_start_playback = f"http://{self.ip}/play.ps3"
         
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.get(endpoint_target_temp, timeout = 5) as response:
+                async with session.get(endpoint_start_playback, timeout = 30) as response:
+                    if response.status == 200:
+                        pass
+                    else:
+                        raise RequestError(f"Unexpected response code: {response.status}")
+        except asyncio.TimeoutError:
+            raise RequestError("Request is not available")
+        except RequestError:
+            raise
+        except Exception:
+            raise RequestError("Invalid host")
+        
+    async def _mount_gamefile(self, game: str): 
+        try:
+            endpoint_mount_gamefile = f"http://{self.ip}/xmb.ps3$exit;/wait.ps3?xmb;{self.games[game]}"
+            async with aiohttp.ClientSession() as session:
+                async with session.get(endpoint_mount_gamefile, timeout = 30) as response:
+                    if response.status == 200:
+                        pass
+                    else:
+                        raise RequestError(f"Unexpected response code: {response.status}")
+        except KeyError:
+            raise
+        except asyncio.TimeoutError:
+            raise RequestError("Request is not available")
+        except RequestError:
+            raise
+        except Exception:
+            raise RequestError("Invalid host")
+        
+    async def _mount_disc(self): 
+        try:
+            endpoint_mount_disc = f"http://{self.ip}/xmb.ps3$exit;/wait.ps3?xmb;/mount.ps3/unmount;/insert.ps3"
+            async with aiohttp.ClientSession() as session:
+                async with session.get(endpoint_mount_disc, timeout = 30) as response:
+                    if response.status == 200:
+                        pass
+                    else:
+                        raise RequestError(f"Unexpected response code: {response.status}")
+        except asyncio.TimeoutError:
+            raise RequestError("Request is not available")
+        except RequestError:
+            raise
+        except Exception:
+            raise RequestError("Invalid host")
+        
+    async def _press_button(self, button: str): 
+        try:
+            endpoint_press_button = f"http://{self.ip}/pad.ps3?{button}"
+            async with aiohttp.ClientSession() as session:
+                async with session.get(endpoint_press_button, timeout = 5) as response:
                     if response.status == 200:
                         pass
                     else:
@@ -237,7 +313,24 @@ class PS3MAPIWrapper:
             await self._start_playback()
         except RequestError:
             raise
+    
+    async def mount_gamefile(self, game: str):
+        try:
+            await self._mount_gamefile(game)
+        except RequestError:
+            raise
 
+    async def mount_disc(self):
+        try:
+            await self._mount_disc()
+        except RequestError:
+            raise
+    
+    async def press_button(self, button: str):
+        try:
+            await self._press_button(button)
+        except RequestError:
+            raise
 
     @property
     def state(self):
@@ -270,3 +363,11 @@ class PS3MAPIWrapper:
     @property
     def media_session(self):
         return self._media_session
+    
+    @property
+    def games(self):
+        return self._games
+    
+    @property
+    def mounted_gamefile(self):
+        return self._mounted_gamefile
