@@ -10,7 +10,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.util.dt import utcnow
 
 from .const import DOMAIN, ENTRIES, XMB_SOURCE
-from .API.PS3MAPI import RequestError
+from .API.exceptions import RequestError, PlaybackError
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -29,6 +29,7 @@ class MediaPlayer(MediaPlayerEntity, CoordinatorEntity):
             | MediaPlayerEntityFeature.PLAY_MEDIA
             | MediaPlayerEntityFeature.STOP
             | MediaPlayerEntityFeature.SELECT_SOURCE
+            | MediaPlayerEntityFeature.TURN_OFF
         )
      
     def __init__(self, coordinator):
@@ -140,16 +141,17 @@ class MediaPlayer(MediaPlayerEntity, CoordinatorEntity):
     async def async_media_play(self):
         try:
             await self.coordinator.wrapper.start_playback()
-        except RequestError as e:
+        except PlaybackError as e:
             _LOGGER.error(e)
 
     async def async_media_stop(self):
         try:
+            self.coordinator.update_from_memory = True
             await self.coordinator.wrapper.quit_playback()
-        except RequestError as e:
-            _LOGGER.error(e)
-        
-        await self.coordinator.async_refresh()
+            await self.coordinator.async_refresh()
+
+        except PlaybackError as e:
+            _LOGGER.warning(e)
 
     async def async_select_source(self, source):
         try:
@@ -158,5 +160,11 @@ class MediaPlayer(MediaPlayerEntity, CoordinatorEntity):
             else:
                 await self.coordinator.wrapper.mount_gamefile(source)
             _LOGGER.info("Game mounted!")
+        except PlaybackError as e:
+            _LOGGER.error(e)
+
+    async def async_turn_off(self):
+        try:
+            await self.coordinator.wrapper.shutdown()
         except RequestError as e:
             _LOGGER.error(e)

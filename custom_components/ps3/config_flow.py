@@ -7,9 +7,10 @@ import voluptuous as vol
 from homeassistant import config_entries, exceptions
 from homeassistant.const import CONF_IP_ADDRESS
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.selector import SelectSelector, SelectSelectorConfig, SelectSelectorMode
 
 from .API.PS3MAPI import PS3MAPIWrapper, NotificationError
-from .const import DOMAIN
+from .const import DOMAIN, TURN_ON_SCRIPT
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -48,6 +49,12 @@ class PS3MAPIConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             data_schema=vol.Schema(
                 {
                     vol.Required(CONF_IP_ADDRESS): str,
+                    vol.Optional(TURN_ON_SCRIPT, default = None): SelectSelector(
+                        SelectSelectorConfig(
+                            options = [value.unique_id for value in self.hass.data["entity_registry"].entities.values() if value.platform == 'script'], 
+                            mode = SelectSelectorMode.DROPDOWN
+                            )
+                        )
                 }
             ),
             errors=errors,

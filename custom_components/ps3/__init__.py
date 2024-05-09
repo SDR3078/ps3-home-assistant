@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import asyncio
 from datetime import timedelta
 from homeassistant.const import CONF_NAME, Platform
 from homeassistant.core import HomeAssistant
@@ -64,6 +65,8 @@ class PS3Coordinator(DataUpdateCoordinator):
         """Initialize data update coordinator."""
         self.ip_address = config_entry.data.get("ip_address")
         self.wrapper = PS3MAPIWrapper(self.ip_address)
+        self.startup_lock = asyncio.Lock()
+        self.update_from_memory = False
 
         super().__init__(
             hass,
@@ -73,9 +76,18 @@ class PS3Coordinator(DataUpdateCoordinator):
         )
 
     async def _async_update_data(self):
-        try:
-            await self.wrapper.update()
-            return {
+
+        if not self.update_from_memory:
+
+            try:
+                await self.wrapper.update()
+            except SensorError as e:
+                _LOGGER.error(f"Error updating data: {e}")
+                return None
+
+        self.update_from_memory = False
+        
+        return {
                 "state": self.wrapper.state,
                 "cpu_temp": self.wrapper.cpu_temp,
                 "rsx_temp": self.wrapper.rsx_temp,
@@ -86,6 +98,3 @@ class PS3Coordinator(DataUpdateCoordinator):
                 "games": self.wrapper.games,
                 "mounted_gamefile": self.wrapper.mounted_gamefile
             }
-        except SensorError as e:
-            _LOGGER.error(f"Error updating data: {e}")
-            return None

@@ -10,7 +10,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfTemperature, PERCENTAGE
 
 from .const import DOMAIN, ENTRIES, MAX_FAN_SPEED, MIN_FAN_SPEED, FAN_SPEED_INCREASE
-from .API.PS3MAPI import SensorError, RequestError
+from .API.exceptions import SensorError, RequestError
 
 _LOGGER = logging.getLogger(__name__)
 

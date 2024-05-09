@@ -8,7 +8,7 @@ from collections import defaultdict
 from homeassistant.components.notify import ATTR_TARGET, ATTR_DATA, BaseNotificationService
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
-from .API.PS3MAPI import NotificationError
+from .API.exceptions import NotificationError
 
 from .const import DOMAIN, ENTRIES
 

@@ -9,3 +9,5 @@ MAX_FAN_SPEED = 100
 MIN_FAN_SPEED = 3
 FAN_SPEED_INCREASE = 1.0
 XMB_SOURCE = 'XMB/Physical Disc'
+TURN_ON_SCRIPT = 'turn_on_script'
+SCRIPT_DOMAIN = 'script'
