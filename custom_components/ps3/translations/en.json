@@ -13,5 +13,16 @@
             }
         }
       }
+    },
+    "exceptions": {
+      "lock": {
+        "message": "Device waiting for another request to finish"
+      },
+      "device_off":{
+        "message": "Device is turned off"
+      },
+      "starting_up":{
+        "message": "Device is already starting up!"
+      }
     }
-  }
+}

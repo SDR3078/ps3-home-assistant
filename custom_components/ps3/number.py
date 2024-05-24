@@ -4,13 +4,15 @@ import logging
 
 from homeassistant.components.number import NumberEntity
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import UnitOfTemperature, PERCENTAGE
+from homeassistant.const import PERCENTAGE
 
-from .const import DOMAIN, ENTRIES, MAX_FAN_SPEED, MIN_FAN_SPEED, FAN_SPEED_INCREASE
-from .API.exceptions import SensorError, RequestError
+from .const import DOMAIN, ENTRIES, MAX_FAN_SPEED, MIN_FAN_SPEED, FAN_SPEED_INCREASE, FAN_SPEED_KEY, NAME, MANUFACTURER
+from .helpers import request
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -21,13 +23,13 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ):
     async_add_entities(
-        [FanSpeed(hass.data[DOMAIN][ENTRIES][config_entry.entry_id]["coordinator"])]
+        [FanSpeed(hass.data[DOMAIN][ENTRIES][config_entry.entry_id]["coordinator"], config_entry.data.get('mac_address'))]
     )
 
 class FanSpeed(NumberEntity, CoordinatorEntity):
-    def __init__(self, coordinator):
+    def __init__(self, coordinator, mac_address):
         super().__init__(coordinator)
-        self._icon = "mdi:fan"
+        self._mac_address = mac_address
 
     @property
     def name(self):
@@ -57,14 +59,29 @@ class FanSpeed(NumberEntity, CoordinatorEntity):
     
     @property
     def icon(self):
-        return self._icon
+        if self.state is None:
+            return "mdi:fan-off"
+        else:
+            return "mdi:fan"
     
+    @property
+    def unique_id(self):
+        return f"{self._mac_address}-{FAN_SPEED_KEY}"
+    
+    @property
+    def device_info(self):
+        return DeviceInfo(
+            identifiers = {
+                (DOMAIN, self._mac_address)
+            },
+            name = NAME,
+            model = NAME,
+            manufacturer = MANUFACTURER,
+            sw_version = self.coordinator.data.get("firmware_version")
+        )
+    
+    @request
     async def async_set_native_value(self, fan_speed: int):
-        try:
-            await self.coordinator.wrapper.set_fan_speed(fan_speed)
-            await self.coordinator.async_refresh()
-        except SensorError as e:
-            _LOGGER.error(f"Error updating data: {e}")
-        except RequestError as e:
-            _LOGGER.error(e)
+        await self.coordinator.wrapper.set_fan_speed(fan_speed)
+        await self.coordinator.async_refresh()
 

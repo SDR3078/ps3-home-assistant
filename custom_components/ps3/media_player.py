@@ -1,16 +1,20 @@
 from __future__ import annotations
 
 import logging
+import asyncio
+import aiohttp
 
 from homeassistant.components.media_player import MediaPlayerEntity, MediaType, MediaPlayerState, MediaPlayerEntityFeature
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.util.dt import utcnow
 
-from .const import DOMAIN, ENTRIES, XMB_SOURCE
-from .API.exceptions import RequestError, PlaybackError
+from .const import DOMAIN, ENTRIES, XMB_SOURCE, SCRIPT_DOMAIN, TURN_ON_SCRIPT, MEDIA_PLAYER_KEY, NAME, MANUFACTURER
+from .helpers import request
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -20,21 +24,24 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ):
     async_add_entities(
-        [MediaPlayer(hass.data[DOMAIN][ENTRIES][config_entry.entry_id]["coordinator"])]
+        [MediaPlayer(hass.data[DOMAIN][ENTRIES][config_entry.entry_id]["coordinator"], config_entry.data.get(TURN_ON_SCRIPT), hass.services, config_entry.data.get('mac_address'))]
     )
 
 class MediaPlayer(MediaPlayerEntity, CoordinatorEntity):
-    _attr_supported_features = (
+     
+    def __init__(self, coordinator, turn_on_script, service_registry, mac_address):
+        super().__init__(coordinator)
+        self._turn_on_script = turn_on_script
+        self._service_registry = service_registry
+        self._attr_supported_features = (
             MediaPlayerEntityFeature.PLAY
             | MediaPlayerEntityFeature.PLAY_MEDIA
             | MediaPlayerEntityFeature.STOP
             | MediaPlayerEntityFeature.SELECT_SOURCE
             | MediaPlayerEntityFeature.TURN_OFF
+            | (MediaPlayerEntityFeature.TURN_ON if turn_on_script is not None else 0)
         )
-     
-    def __init__(self, coordinator):
-        super().__init__(coordinator)
-        self._icon = "mdi:controller"
+        self._mac_address = mac_address
 
     @property
     def name(self):
@@ -136,35 +143,71 @@ class MediaPlayer(MediaPlayerEntity, CoordinatorEntity):
     
     @property
     def icon(self):
-        return self._icon
+        if self.state == MediaPlayerState.OFF:
+            return "mdi:controller-off"
+        else:
+            return "mdi:controller"
     
+    @property
+    def unique_id(self):
+        return f"{self._mac_address}-{MEDIA_PLAYER_KEY}"
+    
+    @property
+    def device_info(self):
+        return DeviceInfo(
+            identifiers = {
+                (DOMAIN, self._mac_address)
+            },
+            name = NAME,
+            model = NAME,
+            manufacturer = MANUFACTURER,
+            sw_version = self.coordinator.data.get("firmware_version")
+        )
+    
+    @request
     async def async_media_play(self):
-        try:
-            await self.coordinator.wrapper.start_playback()
-        except PlaybackError as e:
-            _LOGGER.error(e)
+        await self.coordinator.wrapper.start_playback()
 
+    @request
     async def async_media_stop(self):
-        try:
-            self.coordinator.update_from_memory = True
-            await self.coordinator.wrapper.quit_playback()
-            await self.coordinator.async_refresh()
+        self.coordinator.update_from_memory = True
+        await self.coordinator.wrapper.quit_playback()
+        await self.coordinator.async_refresh()
 
-        except PlaybackError as e:
-            _LOGGER.warning(e)
-
+    @request
     async def async_select_source(self, source):
-        try:
-            if source == XMB_SOURCE:
-                await self.coordinator.wrapper.mount_disc()
-            else:
-                await self.coordinator.wrapper.mount_gamefile(source)
-            _LOGGER.info("Game mounted!")
-        except PlaybackError as e:
-            _LOGGER.error(e)
+        if source == XMB_SOURCE:
+            await self.coordinator.wrapper.mount_disc()
+        else:
+            await self.coordinator.wrapper.mount_gamefile(source)
+        _LOGGER.info("Game mounted!")
 
+    @request
     async def async_turn_off(self):
-        try:
-            await self.coordinator.wrapper.shutdown()
-        except RequestError as e:
-            _LOGGER.error(e)
+        await self.coordinator.wrapper.shutdown()
+        await self.coordinator.async_refresh()
+
+    async def async_turn_on(self, timeout = 60):
+        if self.coordinator.startup_lock.locked():
+            raise ServiceValidationError(
+                translation_domain = DOMAIN,
+                translation_key = "starting_up"
+            )
+
+        else:
+            async def wait_with_timeout(self):
+                while True:
+                    try:
+                        await self.coordinator.wrapper.wait_for_xmb()
+                        break
+                    except Exception:
+                        pass
+            
+            async with self.coordinator.startup_lock:
+                await self._service_registry.async_call(SCRIPT_DOMAIN, self._turn_on_script, blocking = True)
+                try:
+                    await asyncio.wait_for(wait_with_timeout(self), timeout)
+                except (asyncio.TimeoutError, aiohttp.client_exceptions.ClientConnectorError) as e:
+                    raise HomeAssistantError(e)
+
+            await self.coordinator.async_refresh()

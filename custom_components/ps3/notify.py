@@ -7,10 +7,11 @@ from collections import defaultdict
 
 from homeassistant.components.notify import ATTR_TARGET, ATTR_DATA, BaseNotificationService
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
-from .API.exceptions import NotificationError
 
 from .const import DOMAIN, ENTRIES
+from .API.exceptions import DeviceOffError, LockError
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -52,7 +53,15 @@ class PS3NotificationService(BaseNotificationService):
                         await self.wrapper_dict[target].send_notification(message, icon = data_dict['icon'], sound = data_dict['sound'])
                     else:
                         await self.wrapper_dict[target].send_notification(message)
+
                 except KeyError:
-                    _LOGGER.error(f"{target} is not a known ip address of a registered PlayStation® 3 device")
-                except NotificationError:
-                    _LOGGER.warning(f"Message could not be send because {target} is unavailable")
+                    raise ServiceValidationError(f"{target} is not a known ip address of a registered PlayStation® 3 device")
+
+                except DeviceOffError:
+                    raise ServiceValidationError(f"Device {target} is turned off")
+        
+                except LockError:
+                    raise ServiceValidationError(f"Device {target} waiting for another request to finish")
+
+                except Exception as e:
+                    raise HomeAssistantError(e)

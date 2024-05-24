@@ -96,5 +96,6 @@ class PS3Coordinator(DataUpdateCoordinator):
                 "target_temp": self.wrapper.target_temp,
                 "media_session": self.wrapper.media_session,
                 "games": self.wrapper.games,
-                "mounted_gamefile": self.wrapper.mounted_gamefile
+                "mounted_gamefile": self.wrapper.mounted_gamefile,
+                "firmware_version": self.wrapper.firmware_version
             }

@@ -1,5 +1,7 @@
+NAME = "PlayStation® 3"
+MANUFACTURER = "Sony"
 DOMAIN = "ps3"
-PLATFORMS = ["binary_sensor", "sensor", "climate", "number", "media_player"]
+PLATFORMS = ["climate", "number", "media_player"]
 DATA_HASS_CONFIG = "ps3_hass_config"
 CONF_ENTRY_ID = "entry_id"
 ENTRIES = "entries"
@@ -11,3 +13,6 @@ FAN_SPEED_INCREASE = 1.0
 XMB_SOURCE = 'XMB/Physical Disc'
 TURN_ON_SCRIPT = 'turn_on_script'
 SCRIPT_DOMAIN = 'script'
+FAN_SPEED_KEY = 'fan_speed'
+MEDIA_PLAYER_KEY = 'media_player'
+SYSTEM_TEMP_KEY = 'system_temp'

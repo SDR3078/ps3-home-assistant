@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 from urllib.parse import quote
 
 from . import endpoints
-from .exceptions import SensorError, NotificationError, FanError, RequestError, TempError, PlaybackError, DeviceOffError, LockError
+from .exceptions import SensorError, RequestError, DeviceOffError, LockError
 
 class PS3MAPIWrapper:
     def __init__(self, ip: str):
@@ -24,6 +24,7 @@ class PS3MAPIWrapper:
             'MAX': 'Dynamic',
             'AUTO': 'Auto'
         }
+        self._firmware_version = None
         self._lock = asyncio.Lock()
         self._update_done = asyncio.Event()
 
@@ -48,6 +49,19 @@ class PS3MAPIWrapper:
                                 await asyncio.wait_for(wait_with_timeout(self, evaluator), timeout)
                         except asyncio.TimeoutError:
                             raise SensorError("Could not update sensors after request")
+
+            return wrapper
+        return decorator
+    
+    def fast_server_request():
+        def decorator(func):
+            async def wrapper(self, *args, **kwargs):
+
+                if self._lock.locked():
+                    raise LockError("Waiting for other request to complete")
+                
+                else:
+                    await func(self, *args, **kwargs)
 
             return wrapper
         return decorator
@@ -113,6 +127,8 @@ class PS3MAPIWrapper:
                             self._mounted_gamefile = gamefile_tags[-1]['href']
                         else:
                             self._mounted_gamefile = None
+                        
+                        self._firmware_version = soup.find('a', class_ = "s", href="/setup.ps3").contents[0].split(': ')[-1]
 
                     else:
                         self._state = None
@@ -153,9 +169,24 @@ class PS3MAPIWrapper:
                         pass
                     else:
                         raise RequestError(f"Unexpected response code: {response.status}")
-        except (asyncio.TimeoutError, aiohttp.client_exceptions.ServerDisconnectedError):
-            raise DeviceOffError("Device turned off")
+        except (asyncio.TimeoutError, aiohttp.client_exceptions.ServerDisconnectedError, aiohttp.client_exceptions.ClientConnectorError):
+            raise DeviceOffError()
         except Exception:
+            raise
+
+    async def _get_mac_address(self):
+        endpoint_mac = f"http://{self.ip}/cpursx.ps3"
+
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(endpoint_mac, timeout = 5) as response:
+                    if response.status == 200:
+                        soup = BeautifulSoup(await response.text(), 'html.parser')
+                        mac = soup.find(string = lambda mac: 'MAC Addr' in mac).split('MAC Addr : ')[-1].split(' - ')[0]
+                        return mac
+                    else:
+                        raise SensorError(f"Unexpected response code: {response.status}")
+        except SensorError:
             raise
 
     async def update(self):
@@ -165,75 +196,60 @@ class PS3MAPIWrapper:
             raise
         except Exception as e:
             raise SensorError(e)
+        
+    async def get_mac_address(self):
+        try:
+            return await self._get_mac_address()
+        except SensorError:
+            raise
+        except Exception as e:
+            raise SensorError(e)
 
+    @fast_server_request()
     async def send_notification(self, notification: str, icon: int = 1, sound: int = 1):
         notification_url = quote(notification)
-        try:
-            await self._call_service(endpoints.NOTIFICATION, timeout = 5, notification_url = notification_url, icon = icon, sound = sound)
-        except Exception as e:
-            raise NotificationError(e)
+        await self._call_service(endpoints.NOTIFICATION, timeout = 5, notification_url = notification_url, icon = icon, sound = sound)
 
+    @fast_server_request()
     async def set_fan_mode(self, fan_mode: str):
         url_substrings = {'SYSCON': 'fan=0', 'Manual': 'fan=1;/cpursx.ps3?man', 'Dynamic': 'fan=1;/cpursx.ps3?man;/cpursx.ps3?mode', 'Auto': 'fan=2'}
-        try:
-            fan_mode_substring = url_substrings[fan_mode]
-            await self._call_service(endpoints.FAN_MODE, timeout = 5, fan_mode_substring = fan_mode_substring)
-        except Exception as e:
-            raise FanError(e)
+        fan_mode_substring = url_substrings[fan_mode]
+        await self._call_service(endpoints.FAN_MODE, timeout = 5, fan_mode_substring = fan_mode_substring)
 
+    @fast_server_request()
     async def set_target_temp(self, target_temp: float):
-        try:
-            await self._call_service(endpoints.TARGET_TEMP, timeout = 5, target_temp = target_temp)
-        except Exception as e:
-            raise TempError(e)
+        await self._call_service(endpoints.TARGET_TEMP, timeout = 5, target_temp = target_temp)
 
+    @fast_server_request()
     async def set_fan_speed(self, fan_speed: int):
-        try:
-            await self._call_service(endpoints.FAN_SPEED, timeout = 5, fan_speed = fan_speed)
-        except Exception as e:
-            raise FanError(e)
+        await self._call_service(endpoints.FAN_SPEED, timeout = 5, fan_speed = fan_speed)
 
     @slow_server_request(evaluator = lambda self: self._media_session == None)
     async def quit_playback(self):
-        try:
-            await self._call_service(endpoints.QUIT_PLAYBACK, timeout = 30)
-            await self._update()
-        except Exception as e:
-            raise PlaybackError(e)
+        await self._call_service(endpoints.QUIT_PLAYBACK, timeout = 30)
+        await asyncio.sleep(0)
+        await self._update()
 
     @slow_server_request(evaluator = lambda self: self._media_session != None)
     async def start_playback(self):
-        try:
-            await self._call_service(endpoints.START_PLAYBACK, timeout = 30)
-        except Exception as e:
-            raise PlaybackError(e)
+        await self._call_service(endpoints.START_PLAYBACK, timeout = 30)
 
     @slow_server_request(evaluator = lambda self, func_value: self._mounted_gamefile == self._games[func_value], func_arg_idx = 0)
     async def mount_gamefile(self, game: str):
-        try:
-            gamefile = self._games[game]
-            await self._call_service(endpoints.MOUNT_GAMEFILE, timeout = 30, gamefile = gamefile)
-        except Exception as e:
-            raise PlaybackError(e)
+        gamefile = self._games[game]
+        await self._call_service(endpoints.MOUNT_GAMEFILE, timeout = 30, gamefile = gamefile)
 
     @slow_server_request(evaluator = lambda self: self._mounted_gamefile == None)
     async def mount_disc(self):
-        try:
-            await self._call_service(endpoints.MOUNT_DISC, timeout = 30)
-        except Exception as e:
-            raise PlaybackError(e)
+        await self._call_service(endpoints.MOUNT_DISC, timeout = 30)
     
+    @fast_server_request()
     async def press_button(self, button: str):
-        try:
-            await self._call_service(endpoints.PRESS_BUTTON, timeout = 5, button = button)
-        except Exception as e:
-            raise RequestError(e)
+        await self._call_service(endpoints.PRESS_BUTTON, timeout = 5, button = button)
 
+    @fast_server_request()
     async def shutdown(self):
-        try:
-            await self._call_service(endpoints.SHUTDOWN, timeout = 30)
-        except Exception as e:
-            raise RequestError(e)
+        await self._call_service(endpoints.SHUTDOWN, timeout = 30)
 
     async def wait_for_xmb(self):
         try:
@@ -282,3 +298,7 @@ class PS3MAPIWrapper:
     @property
     def mounted_gamefile(self):
         return self._mounted_gamefile
+    
+    @property
+    def firmware_version(self):
+        return self._firmware_version
