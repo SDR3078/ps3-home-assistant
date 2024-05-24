@@ -6,11 +6,23 @@
       "step": {
         "user": {
             "title": "Add PlayStation® 3",
-            "description": "IMPORTANT: PlayStation® 3 must be turned on",
+            "description": "IMPORTANT: PlayStation® 3 must be turned on. More info on the configuration parameters can be found [here](https://github.com/SDR3078/ps3-home-assistant/blob/main/README.md.)",
             "data": {
-                "ip_address": "IP Address of the PlayStation® 3"
+                "ip_address": "IP Address of the PlayStation® 3",
+                "turn_on_script": "Script to turn on PlayStation® 3"
             }
         }
       }
+    },
+    "exceptions": {
+      "lock": {
+        "message": "Device waiting for another request to finish"
+      },
+      "device_off":{
+        "message": "Device is turned off"
+      },
+      "starting_up":{
+        "message": "Device is already starting up!"
+      }
     }
-  }
+}
