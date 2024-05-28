@@ -7,6 +7,7 @@
   "documentation": "https://github.com/SDR3078/ps3-home-assistant",
   "integration_type": "device",
   "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/SDR3078/ps3-home-assistant/issues",
   "requirements": ["beautifulsoup4"],
   "version": "0.1.0"
 }
