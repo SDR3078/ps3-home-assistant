@@ -1,3 +1,4 @@
+[![Hassfest Validation](https://github.com/SDR3078/ps3-home-assistant/actions/workflows/hassfest.yml/badge.svg)](https://github.com/SDR3078/ps3-home-assistant/actions/workflows/hassfest.yml) [![HACS Validation](https://github.com/SDR3078/ps3-home-assistant/actions/workflows/hacs.yml/badge.svg)](https://github.com/SDR3078/ps3-home-assistant/actions/workflows/hacs.yml)
 # PlayStation® 3 - Home Assistant
 
 
