@@ -17,7 +17,6 @@
 - [Configuration](#configuration)
 - [Configuration](#configuration)
 - [License](#license)
-- [Contact](#contact)
 
 ## Introduction
 
