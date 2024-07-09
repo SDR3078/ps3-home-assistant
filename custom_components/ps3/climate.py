@@ -142,8 +142,13 @@ class TempRegulator(ClimateEntity, CoordinatorEntity):
     async def async_set_hvac_mode(self, hvac_mode):
         if hvac_mode == HVACMode.OFF:
             await self.async_turn_off()
-        elif hvac_mode == HVACMode.COOL:
+        elif hvac_mode == HVACMode.COOL and self._turn_on_script is not None:
             await self.async_turn_on()
+        elif hvac_mode == HVACMode.COOL:
+            raise ServiceValidationError(
+                translation_domain = DOMAIN,
+                translation_key = "no_startup_script"
+            )
         else:
             raise HomeAssistantError(f"{hvac_mode} not recognized")
 

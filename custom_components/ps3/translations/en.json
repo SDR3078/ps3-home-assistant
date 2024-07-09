@@ -18,11 +18,14 @@
       "lock": {
         "message": "Device waiting for another request to finish"
       },
-      "device_off":{
+      "device_off": {
         "message": "Device is turned off"
       },
-      "starting_up":{
+      "starting_up": {
         "message": "Device is already starting up!"
+      },
+      "no_startup_script": {
+        "message": "No startup scripts has been configured!"
       }
     }
 }

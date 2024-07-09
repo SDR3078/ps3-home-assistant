@@ -53,7 +53,7 @@ class PS3MAPIConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             data_schema=vol.Schema(
                 {
                     vol.Required(CONF_IP_ADDRESS): str,
-                    vol.Optional(TURN_ON_SCRIPT, default = None): SelectSelector(
+                    vol.Optional(TURN_ON_SCRIPT): SelectSelector(
                         SelectSelectorConfig(
                             options = [value.unique_id for value in self.hass.data["entity_registry"].entities.values() if value.platform == 'script'], 
                             mode = SelectSelectorMode.DROPDOWN

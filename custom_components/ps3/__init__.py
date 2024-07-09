@@ -6,6 +6,7 @@ from datetime import timedelta
 from homeassistant.const import CONF_NAME, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import discovery
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
@@ -82,8 +83,7 @@ class PS3Coordinator(DataUpdateCoordinator):
             try:
                 await self.wrapper.update()
             except SensorError as e:
-                _LOGGER.error(f"Error updating data: {e}")
-                return None
+                raise HomeAssistantError(e)
 
         self.update_from_memory = False
         
