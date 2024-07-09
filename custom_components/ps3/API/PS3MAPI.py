@@ -144,7 +144,7 @@ class PS3MAPIWrapper:
             self._update_done.set()
             self._update_done.clear()
 
-        except (asyncio.TimeoutError, aiohttp.client_exceptions.ServerDisconnectedError):
+        except (asyncio.TimeoutError, aiohttp.client_exceptions.ServerDisconnectedError, aiohttp.client_exceptions.ClientConnectorError):
             self._state = "Off"
             self._cpu_temp = None
             self._rsx_temp = None
