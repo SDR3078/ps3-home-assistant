@@ -1,0 +1,31 @@
+{
+    "config": {
+        "error": {
+            "cannot_connect": "IP incorreto / PlayStation® 3 não está ligado"
+        },
+        "step": {
+            "user": {
+                "title": "Adicionar PlayStation® 3",
+                "description": "IMPORTANTE: O PlayStation® 3 deve estar ligado. Mais informações sobre os parâmetros de configuração podem ser encontradas [aqui](https://github.com/SDR3078/ps3-home-assistant/blob/main/README.md.)",
+                "data": {
+                    "ip_address": "Endereço IP do PlayStation® 3",
+                    "turn_on_script": "Script para ligar o PlayStation® 3"
+                }
+            }
+        }
+    },
+    "exceptions": {
+        "lock": {
+            "message": "Dispositivo aguardando outra solicitação terminar"
+        },
+        "device_off": {
+            "message": "O dispositivo está desligado"
+        },
+        "starting_up": {
+            "message": "O dispositivo já está iniciando!"
+        },
+        "no_startup_script": {
+            "message": "Nenhum script de inicialização foi configurado!"
+        }
+    }
+}
