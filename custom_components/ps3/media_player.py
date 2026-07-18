@@ -128,7 +128,7 @@ class MediaPlayer(MediaPlayerEntity, CoordinatorEntity):
             mounted_gamefile = self.coordinator.data.get("mounted_gamefile")
             if mounted_gamefile is not None:
                 games_dict = {link: name for name, link in self.coordinator.data.get("games").items()}
-                return games_dict[mounted_gamefile]
+                return games_dict.get(mounted_gamefile)
             return XMB_SOURCE
         return None
     
