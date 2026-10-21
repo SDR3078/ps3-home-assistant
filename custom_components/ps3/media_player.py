@@ -31,6 +31,7 @@ class MediaPlayer(MediaPlayerEntity, CoordinatorEntity):
      
     def __init__(self, coordinator, turn_on_script, service_registry, mac_address):
         super().__init__(coordinator)
+        self._device_class = "receiver"
         self._turn_on_script = turn_on_script
         self._service_registry = service_registry
         self._attr_supported_features = (
@@ -42,10 +43,14 @@ class MediaPlayer(MediaPlayerEntity, CoordinatorEntity):
             | (MediaPlayerEntityFeature.TURN_ON if turn_on_script is not None else 0)
         )
         self._mac_address = mac_address
-
+    
     @property
     def name(self):
         return "PS3"
+    
+    @property
+    def device_class(self):
+        return self._device_class
     
     @property
     def media_content_id(self):
