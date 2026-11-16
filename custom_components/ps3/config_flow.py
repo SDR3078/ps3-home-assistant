@@ -12,7 +12,7 @@ from homeassistant.helpers.selector import SelectSelector, SelectSelectorConfig,
 from homeassistant.helpers.device_registry import format_mac
 
 from .API.PS3MAPI import PS3MAPIWrapper
-from .const import DOMAIN, TURN_ON_SCRIPT
+from .const import DOCS_URL, DOMAIN, TURN_ON_SCRIPT
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -60,6 +60,7 @@ class PS3MAPIConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 }
             ),
             errors=errors,
+            description_placeholders={"docs_url": DOCS_URL},
         )
 
 
