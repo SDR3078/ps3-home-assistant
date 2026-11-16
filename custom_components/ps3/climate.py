@@ -59,7 +59,7 @@ class TempRegulator(ClimateEntity, CoordinatorEntity):
         return "PS3 System Temperature"
 
     @property
-    def current_temperature(self):
+    def native_current_temperature(self):
         if self.coordinator.data is not None:
             rsx_temp = self.coordinator.data.get("rsx_temp")
             cpu_temp = self.coordinator.data.get("cpu_temp")
@@ -97,15 +97,32 @@ class TempRegulator(ClimateEntity, CoordinatorEntity):
         return float(MIN_TEMP)
     
     @property
-    def target_temperature(self):
+    def native_target_temperature(self):
         if self.coordinator.data is not None:
             return self.coordinator.data.get("target_temp")
         return None
     
     @property
-    def temperature_unit(self):
+    def native_temperature_unit(self):
         return UnitOfTemperature.CELSIUS
     
+    # Home Assistant 2026.11 renamed these properties to the native_ ones above and
+    # logs a deprecation warning for integrations that only provide the old names.
+    # Older versions only read the old names, so keep them as aliases until the
+    # minimum supported version is 2026.11. Home Assistant ignores the old names
+    # when a class provides both.
+    @property
+    def current_temperature(self):
+        return self.native_current_temperature
+
+    @property
+    def target_temperature(self):
+        return self.native_target_temperature
+
+    @property
+    def temperature_unit(self):
+        return self.native_temperature_unit
+
     @property
     def icon(self):
         if self.hvac_mode == HVACMode.OFF:
