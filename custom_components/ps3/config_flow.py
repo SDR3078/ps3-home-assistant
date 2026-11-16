@@ -22,7 +22,7 @@ async def validate_input(hass: HomeAssistant, data: dict):
 
     try:
         mac_address = format_mac(await wrapper.get_mac_address())
-        asyncio.sleep(0)
+        await asyncio.sleep(0)
         await wrapper.send_notification("Home Assistant connection was succesful!")
     except Exception:
         raise CannotConnect
@@ -31,8 +31,6 @@ async def validate_input(hass: HomeAssistant, data: dict):
 
 
 class PS3MAPIConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_POLL
-
     async def async_step_user(self, user_input = None):
         """Handle a flow initiated by the user."""
         errors = {}
